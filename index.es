@@ -1,5 +1,4 @@
 import React from 'react'
-import { remote } from 'electron'
 import { connect } from 'react-redux'
 import { get } from 'lodash'
 import { FormGroup, FormControl, ControlLabel, Button, Alert } from 'react-bootstrap'
@@ -117,26 +116,100 @@ class AutoLogin {
 
   // Auto fill credentials when login page is loaded
   autoFillCredentials() {
-    const mainWindow = remote.getCurrentWindow()
-    if (!mainWindow) return
+    // Set up event listener for game webview
+    try {
+      const gameWebView = document.querySelector('webview.kan-game-window')
+      if (!gameWebView) {
+        console.log('Game webview not found. Will try again later.')
+        // Retry after a short delay
+        setTimeout(() => this.autoFillCredentials(), 2000)
+        return
+      }
 
-    mainWindow.webContents.on('did-finish-load', () => {
-      if (!this.config.enabled) return
+      // Listen for page loads
+      gameWebView.addEventListener('did-finish-load', () => {
+        this.fillLoginForm(gameWebView)
+      })
 
-      mainWindow.webContents.executeJavaScript(`
-        // Check if we're on the login page
-        if (document.querySelector('input[name="username"]') && document.querySelector('input[name="password"]')) {
+      // Also try to fill in case we missed the load event
+      this.fillLoginForm(gameWebView)
+    } catch (e) {
+      console.error('Error setting up auto-login:', e)
+    }
+  }
+
+  fillLoginForm(webview) {
+    if (!this.config.enabled) return
+
+    if (!this.config.username || !this.config.password) {
+      console.log('Username or password not configured')
+      return
+    }
+
+    // Execute code in the context of game webview
+    webview.executeJavaScript(`
+      (function() {
+        // Debug info
+        console.log('Checking for login form...');
+
+        // Try different possible selectors for login forms
+        const possibleUserSelectors = [
+          'input[name="username"]',
+          'input[type="text"][id*="username"]',
+          'input[type="text"][id*="login"]',
+          'input[type="text"][name*="login"]',
+          'input[type="email"]'
+        ];
+
+        const possiblePasswordSelectors = [
+          'input[name="password"]',
+          'input[type="password"]'
+        ];
+
+        // Find username field
+        let usernameInput = null;
+        for (const selector of possibleUserSelectors) {
+          usernameInput = document.querySelector(selector);
+          if (usernameInput) {
+            console.log('Found username field with selector:', selector);
+            break;
+          }
+        }
+
+        // Find password field
+        let passwordInput = null;
+        for (const selector of possiblePasswordSelectors) {
+          passwordInput = document.querySelector(selector);
+          if (passwordInput) {
+            console.log('Found password field with selector:', selector);
+            break;
+          }
+        }
+
+        // Fill the form if fields were found
+        if (usernameInput && passwordInput) {
+          console.log('Filling login credentials');
+
           // Fill username
-          const usernameInput = document.querySelector('input[name="username"]')
-          usernameInput.value = '${this.config.username}'
-          usernameInput.dispatchEvent(new Event('input', { bubbles: true }))
+          usernameInput.value = '${this.config.username}';
+          usernameInput.dispatchEvent(new Event('input', { bubbles: true }));
 
           // Fill password
-          const passwordInput = document.querySelector('input[name="password"]')
-          passwordInput.value = '${this.config.password}'
-          passwordInput.dispatchEvent(new Event('input', { bubbles: true }))
+          passwordInput.value = '${this.config.password}';
+          passwordInput.dispatchEvent(new Event('input', { bubbles: true }));
+
+          return true;
+        } else {
+          console.log('Login form not found');
+          return false;
         }
-      `)
+      })();
+    `).then(result => {
+      if (result) {
+        console.log('Auto-login credentials filled successfully')
+      }
+    }).catch(err => {
+      console.error('Failed to execute script in webview:', err)
     })
   }
 }
