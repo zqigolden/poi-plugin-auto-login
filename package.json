@@ -1,8 +1,8 @@
 {
   "name": "poi-plugin-auto-login",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A poi plugin for automatically filling KanColle login credentials. Designed for switching between devices. Note: Credentials are stored in plaintext locally, recommended for personal devices only.",
-  "main": "index.js",
+  "main": "index.es",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -24,7 +24,11 @@
   "homepage": "https://github.com/zqigolden/poi-plugin-auto-login#readme",
   "dependencies": {
     "react": "^16.14.0",
-    "react-dom": "^16.14.0"
+    "react-dom": "^16.14.0",
+    "react-redux": "^7.2.0",
+    "redux": "^4.0.5",
+    "lodash": "^4.17.21",
+    "react-bootstrap": "^0.32.4"
   },
   "poiPlugin": {
     "title": "Auto Login",
