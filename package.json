@@ -1,6 +1,6 @@
 {
   "name": "poi-plugin-auto-login",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "A poi plugin for automatically filling KanColle login credentials. Designed for switching between devices. Note: Credentials are stored in plaintext locally, recommended for personal devices only.",
   "main": "index.es",
   "scripts": {
@@ -33,7 +33,7 @@
   "poiPlugin": {
     "title": "Auto Login",
     "description": "Auto-fill login credentials (plaintext storage, use with caution)",
-    "icon": "fa/fa-sign-in",
+    "icon": "fa/sign-in",
     "priority": 100,
     "apiVer": {
       "6.99.99": "0.1.0"
