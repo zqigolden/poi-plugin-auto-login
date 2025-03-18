@@ -118,7 +118,7 @@ class AutoLogin {
   autoFillCredentials() {
     // Set up event listener for game webview
     try {
-      const gameWebView = document.querySelector('webview.kan-game-window')
+      const gameWebView = document.querySelector('webview.kancolle-webview')
       if (!gameWebView) {
         console.log('Game webview not found. Will try again later.')
         // Retry after a short delay
@@ -150,21 +150,38 @@ class AutoLogin {
     webview.executeJavaScript(`
       (function() {
         // Debug info
-        console.log('Checking for login form...');
+        console.log('Checking for DMM login form...');
 
-        // Try different possible selectors for login forms
-        const possibleUserSelectors = [
-          'input[name="username"]',
-          'input[type="text"][id*="username"]',
-          'input[type="text"][id*="login"]',
+        // DMM specific selectors
+        const dmmUserSelectors = [
+          'input#login_id',
+          'input[name="login_id"]',
           'input[type="text"][name*="login"]',
           'input[type="email"]'
         ];
 
-        const possiblePasswordSelectors = [
+        const dmmPasswordSelectors = [
+          'input#password',
           'input[name="password"]',
           'input[type="password"]'
         ];
+
+        // Generic selectors as fallback
+        const genericUserSelectors = [
+          'input[name="username"]',
+          'input[type="text"][id*="username"]',
+          'input[type="text"][id*="login"]',
+          'input[type="text"][name*="login"]'
+        ];
+
+        const genericPasswordSelectors = [
+          'input[name="password"]',
+          'input[type="password"]'
+        ];
+
+        // Combine selectors with DMM ones first for priority
+        const possibleUserSelectors = [...dmmUserSelectors, ...genericUserSelectors];
+        const possiblePasswordSelectors = [...dmmPasswordSelectors, ...genericPasswordSelectors];
 
         // Find username field
         let usernameInput = null;
@@ -186,9 +203,9 @@ class AutoLogin {
           }
         }
 
-        // Fill the form if fields were found
+        // If we found login form elements
         if (usernameInput && passwordInput) {
-          console.log('Filling login credentials');
+          console.log('Filling DMM login credentials');
 
           // Fill username
           usernameInput.value = '${this.config.username}';
@@ -200,13 +217,15 @@ class AutoLogin {
 
           return true;
         } else {
-          console.log('Login form not found');
+          console.log('DMM login form not found on this page');
           return false;
         }
       })();
     `).then(result => {
       if (result) {
         console.log('Auto-login credentials filled successfully')
+      } else {
+        console.log('Failed to fill login form - form elements not found')
       }
     }).catch(err => {
       console.error('Failed to execute script in webview:', err)
