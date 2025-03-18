@@ -1,9 +1,10 @@
 {
   "name": "poi-plugin-auto-login",
-  "version": "1.5.0",
+  "version": "1.7.3",
   "description": "A poi plugin for automatically filling KanColle login credentials. Designed for switching between devices. Note: Credentials are stored in plaintext locally, recommended for personal devices only.",
   "main": "index.es",
   "scripts": {
+    "lint": "eslint .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -25,23 +26,31 @@
     "url": "https://github.com/zqigolden/poi-plugin-auto-login/issues"
   },
   "homepage": "https://github.com/zqigolden/poi-plugin-auto-login#readme",
-  "dependencies": {
-    "react": "^16.14.0",
-    "react-dom": "^16.14.0",
-    "react-redux": "^7.2.0",
-    "redux": "^4.0.5",
-    "lodash": "^4.17.21",
-    "react-bootstrap": "^0.32.4"
+  "dependencies": {},
+  "peerDependencies": {
+    "react": ">=16.14.0",
+    "react-dom": ">=16.14.0",
+    "react-bootstrap": ">=0.32.4",
+    "react-i18next": ">=11.15.3"
   },
   "poiPlugin": {
     "title": "Auto Login",
     "description": "Auto login for DMM",
     "icon": "fa/sign-in",
     "priority": 100,
-    "i18nDir": "./assets/i18n",
+    "i18nDir": "./i18n",
     "apiVer": {
-      "6.99.99": "0.1.0"
-    }
+      "6.99.99": "1.0.0",
+      "7.0.0": "1.7.0",
+      "7.99.99": "1.7.3"
+    },
+    "windowMode": false,
+    "realClose": true,
+    "link": "https://github.com/zqigolden/poi-plugin-auto-login"
+  },
+  "engines": {
+    "node": ">=12.0.0",
+    "npm": ">=6.0.0"
   },
   "publishConfig": {
     "access": "public"
