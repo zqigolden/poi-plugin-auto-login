@@ -1,0 +1,17 @@
+{
+  "Auto Login": "自动登录",
+  "Username": "用户名",
+  "Password": "密码",
+  "Enter DMM account username": "请输入DMM账号用户名",
+  "Enter DMM account password": "请输入DMM账号密码",
+  "Show": "显示",
+  "Hide": "隐藏",
+  "Enabled": "已启用",
+  "Disabled": "已禁用",
+  "Save Settings": "保存设置",
+  "Settings saved successfully!": "设置保存成功！",
+  "Security Warning": "安全警告：",
+  "Credentials are stored in plaintext locally": "凭据以明文形式本地存储",
+  "Only use this plugin on personal devices": "仅在个人设备上使用此插件",
+  "Manual login button click is required for security": "出于安全考虑，需要手动点击登录按钮"
+}

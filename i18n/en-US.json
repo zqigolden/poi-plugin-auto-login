@@ -1,0 +1,17 @@
+{
+  "Auto Login": "Auto Login",
+  "Username": "Username",
+  "Password": "Password",
+  "Enter DMM account username": "Enter DMM account username",
+  "Enter DMM account password": "Enter DMM account password",
+  "Show": "Show",
+  "Hide": "Hide",
+  "Enabled": "Enabled",
+  "Disabled": "Disabled",
+  "Save Settings": "Save Settings",
+  "Settings saved successfully!": "Settings saved successfully!",
+  "Security Warning": "Security Warning:",
+  "Credentials are stored in plaintext locally": "Credentials are stored in plaintext locally",
+  "Only use this plugin on personal devices": "Only use this plugin on personal devices",
+  "Manual login button click is required for security": "Manual login button click is required for security"
+}

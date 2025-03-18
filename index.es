@@ -2,6 +2,7 @@ import React from 'react'
 import { connect } from 'react-redux'
 import { get } from 'lodash'
 import { FormGroup, FormControl, ControlLabel, Button, Alert } from 'react-bootstrap'
+import { useTranslation } from 'react-i18next'
 
 const { config } = window
 const PLUGIN_KEY = 'poi-plugin-auto-login'
@@ -12,100 +13,117 @@ const DEFAULT_CONFIG = {
 }
 
 // Settings panel component
-export const reactClass = connect((state) => ({
+const PluginSettings = connect((state) => ({
   config: get(state.config, PLUGIN_KEY, DEFAULT_CONFIG)
-}))(class PluginSettingsClass extends React.Component {
-  constructor(props) {
-    super(props)
-    this.state = {
-      username: props.config.username || '',
-      password: props.config.password || '',
-      enabled: props.config.enabled !== false,
-      showSuccess: false
-    }
-  }
+}))(({ config }) => {
+  const { t } = useTranslation('poi-plugin-auto-login')
+  const [state, setState] = React.useState({
+    username: config.username || '',
+    password: config.password || '',
+    enabled: config.enabled !== false,
+    showSuccess: false,
+    showPassword: false
+  })
 
-  handleChange = (key) => (e) => {
-    this.setState({
+  const handleChange = (key) => (e) => {
+    setState({
+      ...state,
       [key]: e.target.value,
       showSuccess: false
     })
   }
 
-  handleToggle = () => {
-    const { enabled } = this.state
-    this.setState({
-      enabled: !enabled,
+  const handleToggle = () => {
+    setState({
+      ...state,
+      enabled: !state.enabled,
       showSuccess: false
     })
   }
 
-  handleSave = () => {
-    const { username, password, enabled } = this.state
-    config.set(PLUGIN_KEY, {
+  const togglePasswordVisibility = () => {
+    setState({
+      ...state,
+      showPassword: !state.showPassword
+    })
+  }
+
+  const handleSave = () => {
+    const { username, password, enabled } = state
+    window.config.set(PLUGIN_KEY, {
       username,
       password,
       enabled
     })
-    this.setState({ showSuccess: true })
-    setTimeout(() => this.setState({ showSuccess: false }), 3000)
+    setState({ ...state, showSuccess: true })
+    setTimeout(() => setState({ ...state, showSuccess: false }), 3000)
   }
 
-  render() {
-    const { username, password, enabled, showSuccess } = this.state
+  const { username, password, enabled, showSuccess, showPassword } = state
 
-    return (
-      <div className="settings-panel" style={{ padding: '10px' }}>
-        <FormGroup>
-          <ControlLabel>Username</ControlLabel>
+  return (
+    <div className="settings-panel" style={{ padding: '10px' }}>
+      <FormGroup>
+        <ControlLabel>{t("Username")}</ControlLabel>
+        <FormControl
+          type="text"
+          value={username}
+          onChange={handleChange('username')}
+          placeholder={t("Enter DMM account username")}
+        />
+      </FormGroup>
+      <FormGroup>
+        <ControlLabel>{t("Password")}</ControlLabel>
+        <div style={{ display: 'flex' }}>
           <FormControl
-            type="text"
-            value={username}
-            onChange={this.handleChange('username')}
-            placeholder="Enter DMM account username"
-          />
-        </FormGroup>
-        <FormGroup>
-          <ControlLabel>Password</ControlLabel>
-          <FormControl
-            type="password"
+            type={showPassword ? 'text' : 'password'}
             value={password}
-            onChange={this.handleChange('password')}
-            placeholder="Enter DMM account password"
+            onChange={handleChange('password')}
+            placeholder={t("Enter DMM account password")}
+            style={{ flex: 1 }}
           />
-        </FormGroup>
-        <FormGroup>
           <Button
-            bsStyle={enabled ? 'success' : 'danger'}
-            onClick={this.handleToggle}
-            style={{ marginRight: '10px' }}
+            onClick={togglePasswordVisibility}
+            style={{ marginLeft: '5px' }}
           >
-            {enabled ? 'Enabled' : 'Disabled'}
+            {showPassword ? t("Hide") : t("Show")}
           </Button>
-          <Button
-            bsStyle="primary"
-            onClick={this.handleSave}
-          >
-            Save Settings
-          </Button>
-        </FormGroup>
-        {showSuccess && (
-          <Alert bsStyle="success">
-            Settings saved successfully!
-          </Alert>
-        )}
-        <Alert bsStyle="warning" style={{ marginTop: '20px' }}>
-          <strong>Security Warning:</strong>
-          <ul>
-            <li>Credentials are stored in plaintext locally</li>
-            <li>Only use this plugin on personal devices</li>
-            <li>Manual login button click is required for security</li>
-          </ul>
+        </div>
+      </FormGroup>
+      <FormGroup>
+        <Button
+          bsStyle={enabled ? 'success' : 'danger'}
+          onClick={handleToggle}
+          style={{ marginRight: '10px' }}
+        >
+          {enabled ? t("Enabled") : t("Disabled")}
+        </Button>
+        <Button
+          bsStyle="primary"
+          onClick={handleSave}
+        >
+          {t("Save Settings")}
+        </Button>
+      </FormGroup>
+      {showSuccess && (
+        <Alert bsStyle="success">
+          {t("Settings saved successfully!")}
         </Alert>
-      </div>
-    )
-  }
+      )}
+      <Alert bsStyle="warning" style={{ marginTop: '20px' }}>
+        <strong>{t("Security Warning")}</strong>
+        <ul>
+          <li>{t("Credentials are stored in plaintext locally")}</li>
+          <li>{t("Only use this plugin on personal devices")}</li>
+          <li>{t("Manual login button click is required for security")}</li>
+        </ul>
+      </Alert>
+    </div>
+  )
 })
+
+// Export the React component for plugin settings
+export const reactClass = PluginSettings
 
 // Plugin main class
 class AutoLogin {
@@ -126,8 +144,11 @@ class AutoLogin {
         return
       }
 
+      console.log('Found game webview, setting up listeners')
+
       // Listen for page loads
       gameWebView.addEventListener('did-finish-load', () => {
+        console.log('Webview did-finish-load event triggered')
         this.fillLoginForm(gameWebView)
       })
 
@@ -139,93 +160,180 @@ class AutoLogin {
   }
 
   fillLoginForm(webview) {
-    if (!this.config.enabled) return
+    if (!this.config.enabled) {
+      console.log('Auto-login disabled in settings')
+      return
+    }
 
     if (!this.config.username || !this.config.password) {
       console.log('Username or password not configured')
       return
     }
 
+    console.log('Attempting to fill login form with username:', this.config.username)
+
     // Execute code in the context of game webview
     webview.executeJavaScript(`
       (function() {
-        // Debug info
-        console.log('Checking for DMM login form...');
+        console.log('Starting React-aware login form filling');
 
-        // DMM specific selectors
-        const dmmUserSelectors = [
-          'input#login_id',
-          'input[name="login_id"]',
-          'input[type="text"][name*="login"]',
-          'input[type="email"]'
-        ];
+        // Debug information about the page
+        console.log('Current URL:', window.location.href);
 
-        const dmmPasswordSelectors = [
-          'input#password',
-          'input[name="password"]',
-          'input[type="password"]'
-        ];
+        // Function to fill login form for React applications
+        function fillReactLoginForm() {
+          // 1. Try to locate form elements
+          const loginInput = document.querySelector('#login_id');
+          const passwordInput = document.querySelector('#password');
 
-        // Generic selectors as fallback
-        const genericUserSelectors = [
-          'input[name="username"]',
-          'input[type="text"][id*="username"]',
-          'input[type="text"][id*="login"]',
-          'input[type="text"][name*="login"]'
-        ];
+          if (!loginInput || !passwordInput) {
+            console.log('Form fields not found directly, trying iframe...');
 
-        const genericPasswordSelectors = [
-          'input[name="password"]',
-          'input[type="password"]'
-        ];
+            // Try iframe
+            const loginIframe = document.querySelector('iframe');
+            if (loginIframe) {
+              try {
+                const iframeDoc = loginIframe.contentDocument ||
+                                (loginIframe.contentWindow && loginIframe.contentWindow.document);
 
-        // Combine selectors with DMM ones first for priority
-        const possibleUserSelectors = [...dmmUserSelectors, ...genericUserSelectors];
-        const possiblePasswordSelectors = [...dmmPasswordSelectors, ...genericPasswordSelectors];
+                if (iframeDoc) {
+                  // Look for form fields in the iframe
+                  const iframeLoginInput = iframeDoc.querySelector('#login_id');
+                  const iframePasswordInput = iframeDoc.querySelector('#password');
 
-        // Find username field
-        let usernameInput = null;
-        for (const selector of possibleUserSelectors) {
-          usernameInput = document.querySelector(selector);
-          if (usernameInput) {
-            console.log('Found username field with selector:', selector);
-            break;
+                  if (iframeLoginInput && iframePasswordInput) {
+                    return fillReactInputs(iframeLoginInput, iframePasswordInput, iframeDoc);
+                  } else {
+                    console.log('Form fields not found in iframe');
+                  }
+                } else {
+                  console.log('Cannot access iframe document (cross-origin)');
+                }
+              } catch (e) {
+                console.log('Error accessing iframe:', e.message);
+              }
+            }
+
+            return false;
+          }
+
+          // Found form fields, attempt to fill
+          return fillReactInputs(loginInput, passwordInput, document);
+        }
+
+        // Fill React input fields using multiple methods
+        function fillReactInputs(loginInput, passwordInput, doc) {
+          console.log('Found login form, attempting to fill with React-aware methods');
+
+          // Method 1: Native event simulation
+          function nativeInputValueSetter(value) {
+            const proto = Object.getPrototypeOf(loginInput);
+            const protoValueSetter = Object.getOwnPropertyDescriptor(proto, 'value').set;
+            const protoValueSetterCalled = protoValueSetter.call(loginInput, value);
+            return protoValueSetterCalled;
+          }
+
+          try {
+            // Use the same method React uses internally to set values
+            const username = '${this.config.username}';
+            const password = '${this.config.password}';
+
+            // 1. Directly access prototype setter
+            const loginProto = Object.getPrototypeOf(loginInput);
+            const loginSetter = Object.getOwnPropertyDescriptor(loginProto, 'value').set;
+            const passwordProto = Object.getPrototypeOf(passwordInput);
+            const passwordSetter = Object.getOwnPropertyDescriptor(passwordProto, 'value').set;
+
+            // Call native setter
+            loginSetter.call(loginInput, username);
+            passwordSetter.call(passwordInput, password);
+
+            // 2. Trigger React onChange events
+            loginInput.dispatchEvent(new Event('input', { bubbles: true }));
+            loginInput.dispatchEvent(new Event('change', { bubbles: true }));
+            passwordInput.dispatchEvent(new Event('input', { bubbles: true }));
+            passwordInput.dispatchEvent(new Event('change', { bubbles: true }));
+
+            console.log('Values set using native setters:', loginInput.value, passwordInput.value);
+
+            // 3. Use React's synthetic event system - find and use React fiber
+            setTimeout(() => {
+              try {
+                // Look for possible React fiber
+                let fiber = loginInput._reactFiber ||
+                          loginInput._reactInternalFiber ||
+                          loginInput.__reactFiber ||
+                          loginInput.__reactInternalFiber;
+
+                if (!fiber) {
+                  // Try to find React instance from DOM node
+                  for (const key in loginInput) {
+                    if (key.startsWith('__reactFiber$') ||
+                        key.startsWith('__reactInternalInstance$')) {
+                      fiber = loginInput[key];
+                      break;
+                    }
+                  }
+                }
+
+                if (fiber) {
+                  console.log('Found React fiber, attempting to use React event system');
+                  // Here we found React fiber, could potentially manipulate component state
+                  // but for security reasons, we won't do that, just log that we found it
+                }
+              } catch (e) {
+                console.log('React fiber access error:', e);
+              }
+            }, 0);
+
+            // 4. Monitor if values are cleared, and refill if necessary
+            const valueMonitor = setInterval(() => {
+              if (!loginInput.value || !passwordInput.value) {
+                console.log('Values were cleared, refilling...');
+
+                // Try setting values again
+                loginSetter.call(loginInput, username);
+                passwordSetter.call(passwordInput, password);
+
+                loginInput.dispatchEvent(new Event('input', { bubbles: true }));
+                loginInput.dispatchEvent(new Event('change', { bubbles: true }));
+                passwordInput.dispatchEvent(new Event('input', { bubbles: true }));
+                passwordInput.dispatchEvent(new Event('change', { bubbles: true }));
+              }
+            }, 100);
+
+            // Clear monitor after 10 seconds
+            setTimeout(() => {
+              clearInterval(valueMonitor);
+            }, 10000);
+
+            // 5. Try to handle "remember me" option if available
+            try {
+              const rememberCheckbox = doc.querySelector('#use_auto_login');
+              if (rememberCheckbox && !rememberCheckbox.checked) {
+                rememberCheckbox.checked = true;
+                rememberCheckbox.dispatchEvent(new Event('change', { bubbles: true }));
+                console.log('Remember checkbox checked');
+              }
+            } catch (e) {
+              console.log('Error checking remember checkbox:', e);
+            }
+
+            return true;
+          } catch (e) {
+            console.error('Error filling React form:', e);
+            return false;
           }
         }
 
-        // Find password field
-        let passwordInput = null;
-        for (const selector of possiblePasswordSelectors) {
-          passwordInput = document.querySelector(selector);
-          if (passwordInput) {
-            console.log('Found password field with selector:', selector);
-            break;
-          }
-        }
-
-        // If we found login form elements
-        if (usernameInput && passwordInput) {
-          console.log('Filling DMM login credentials');
-
-          // Fill username
-          usernameInput.value = '${this.config.username}';
-          usernameInput.dispatchEvent(new Event('input', { bubbles: true }));
-
-          // Fill password
-          passwordInput.value = '${this.config.password}';
-          passwordInput.dispatchEvent(new Event('input', { bubbles: true }));
-
-          return true;
-        } else {
-          console.log('DMM login form not found on this page');
-          return false;
-        }
+        // Execute form filling
+        return fillReactLoginForm();
       })();
     `).then(result => {
       if (result) {
-        console.log('Auto-login credentials filled successfully')
+        console.log('Login form filled successfully')
       } else {
-        console.log('Failed to fill login form - form elements not found')
+        console.log('Failed to fill login form')
       }
     }).catch(err => {
       console.error('Failed to execute script in webview:', err)
